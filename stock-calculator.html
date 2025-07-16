@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>주식 계산기</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+
+        .main-content {
+            padding: 30px;
+        }
+
+        .calculator-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .calculator-section {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+            border: 1px solid #e9ecef;
+        }
+
+        .calculator-section h3 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 1.3em;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #2c3e50;
+            font-weight: 500;
+        }
+
+        .input-group input, .input-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .input-group input:focus, .input-group select:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+
+        .button {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+            margin-top: 10px;
+        }
+
+        .button:hover {
+            transform: translateY(-2px);
+        }
+
+        .result-section {
+            background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+            color: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-top: 20px;
+        }
+
+        .result-section h4 {
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .result-item:last-child {
+            border-bottom: none;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+
+        .loss {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+        }
+
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid #e9ecef;
+            margin-bottom: 20px;
+        }
+
+        .tab {
+            padding: 15px 25px;
+            background: none;
+            border: none;
+            font-size: 16px;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+        }
+
+        .tab.active {
+            color: #3498db;
+            border-bottom-color: #3498db;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .info-box {
+            background: #e8f4f8;
+            border-left: 4px solid #3498db;
+            padding: 15px;
+            margin-top: 15px;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .info-box p {
+            margin: 5px 0;
+            color: #2c3e50;
+        }
+
+        @media (max-width: 768px) {
+            .calculator-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .tabs {
+                flex-direction: column;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📈 주식 계산기</h1>
+            <p>매매 손익, 평균 단가, 수수료까지 한번에 계산하세요</p>
+        </div>
+
+        <div class="main-content">
+            <div class="tabs">
+                <button class="tab active" onclick="showTab('basic')">기본 계산</button>
+                <button class="tab" onclick="showTab('average')">평균 단가</button>
+                <button class="tab" onclick="showTab('breakeven')">손익분기점</button>
+                <button class="tab" onclick="showTab('dividend')">배당 계산</button>
+            </div>
+
+            <!-- 기본 매매 계산 -->
+            <div id="basic" class="tab-content active">
+                <div class="calculator-grid">
+                    <div class="calculator-section">
+                        <h3>💰 매매 정보 입력</h3>
+                        <div class="input-group">
+                            <label for="buyPrice">매수 가격 (원)</label>
+                            <input type="number" id="buyPrice" placeholder="예: 50000">
+                        </div>
+                        <div class="input-group">
+                            <label for="sellPrice">매도 가격 (원)</label>
+                            <input type="number" id="sellPrice" placeholder="예: 55000">
+                        </div>
+                        <div class="input-group">
+                            <label for="quantity">수량 (주)</label>
+                            <input type="number" id="quantity" placeholder="예: 100">
+                        </div>
+                        <div class="input-group">
+                            <label for="commission">수수료율 (%)</label>
+                            <input type="number" id="commission" value="0.015" step="0.001" placeholder="0.015">
+                        </div>
+                        <div class="input-group">
+                            <label for="taxRate">거래세율 (%)</label>
+                            <input type="number" id="taxRate" value="0.3" step="0.1" placeholder="0.3">
+                        </div>
+                        <button class="button" onclick="calculateBasic()">계산하기</button>
+                    </div>
+
+                    <div class="calculator-section">
+                        <h3>📊 계산 결과</h3>
+                        <div id="basicResult"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 평균 단가 계산 -->
+            <div id="average" class="tab-content">
+                <div class="calculator-grid">
+                    <div class="calculator-section">
+                        <h3>📈 분할 매수 정보</h3>
+                        <div id="purchaseList">
+                            <div class="purchase-item">
+                                <div class="input-group">
+                                    <label>매수 가격 (원)</label>
+                                    <input type="number" class="purchase-price" placeholder="예: 50000">
+                                </div>
+                                <div class="input-group">
+                                    <label>수량 (주)</label>
+                                    <input type="number" class="purchase-quantity" placeholder="예: 100">
+                                </div>
+                            </div>
+                        </div>
+                        <button class="button" onclick="addPurchase()" style="background: linear-gradient(135deg, #16a085 0%, #27ae60 100%);">매수 추가</button>
+                        <button class="button" onclick="calculateAverage()">평균 단가 계산</button>
+                    </div>
+
+                    <div class="calculator-section">
+                        <h3>📊 평균 단가 결과</h3>
+                        <div id="averageResult"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 손익분기점 계산 -->
+            <div id="breakeven" class="tab-content">
+                <div class="calculator-grid">
+                    <div class="calculator-section">
+                        <h3>⚖️ 손익분기점 계산</h3>
+                        <div class="input-group">
+                            <label for="avgPrice">평균 매수 가격 (원)</label>
+                            <input type="number" id="avgPrice" placeholder="예: 50000">
+                        </div>
+                        <div class="input-group">
+                            <label for="totalQuantity">총 보유 수량 (주)</label>
+                            <input type="number" id="totalQuantity" placeholder="예: 500">
+                        </div>
+                        <div class="input-group">
+                            <label for="breakevenCommission">수수료율 (%)</label>
+                            <input type="number" id="breakevenCommission" value="0.015" step="0.001">
+                        </div>
+                        <div class="input-group">
+                            <label for="breakevenTax">거래세율 (%)</label>
+                            <input type="number" id="breakevenTax" value="0.3" step="0.1">
+                        </div>
+                        <button class="button" onclick="calculateBreakeven()">손익분기점 계산</button>
+                    </div>
+
+                    <div class="calculator-section">
+                        <h3>📊 손익분기점 결과</h3>
+                        <div id="breakevenResult"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 배당 계산 -->
+            <div id="dividend" class="tab-content">
+                <div class="calculator-grid">
+                    <div class="calculator-section">
+                        <h3>💵 배당 정보 입력</h3>
+                        <div class="input-group">
+                            <label for="dividendPerShare">주당 배당금 (원)</label>
+                            <input type="number" id="dividendPerShare" placeholder="예: 500">
+                        </div>
+                        <div class="input-group">
+                            <label for="dividendQuantity">보유 수량 (주)</label>
+                            <input type="number" id="dividendQuantity" placeholder="예: 100">
+                        </div>
+                        <div class="input-group">
+                            <label for="dividendTax">배당세율 (%)</label>
+                            <input type="number" id="dividendTax" value="15.4" step="0.1" placeholder="15.4">
+                        </div>
+                        <div class="input-group">
+                            <label for="stockPrice">현재 주가 (원)</label>
+                            <input type="number" id="stockPrice" placeholder="예: 50000">
+                        </div>
+                        <button class="button" onclick="calculateDividend()">배당 계산</button>
+                    </div>
+
+                    <div class="calculator-section">
+                        <h3>📊 배당 계산 결과</h3>
+                        <div id="dividendResult"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="info-box">
+                <p><strong>💡 알아두세요:</strong></p>
+                <p>• 수수료: 일반적으로 0.015% (증권사마다 다름)</p>
+                <p>• 거래세: 매도시에만 0.3% 부과</p>
+                <p>• 배당세: 15.4% (지방소득세 포함)</p>
+                <p>• 계산 결과는 참고용이며, 실제 거래 시 차이가 있을 수 있습니다.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showTab(tabName) {
+            // 모든 탭 컨텐츠 숨기기
+            const contents = document.querySelectorAll('.tab-content');
+            contents.forEach(content => content.classList.remove('active'));
+
+            // 모든 탭 버튼 비활성화
+            const tabs = document.querySelectorAll('.tab');
+            tabs.forEach(tab => tab.classList.remove('active'));
+
+            // 선택된 탭 표시
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        function calculateBasic() {
+            const buyPrice = parseFloat(document.getElementById('buyPrice').value) || 0;
+            const sellPrice = parseFloat(document.getElementById('sellPrice').value) || 0;
+            const quantity = parseInt(document.getElementById('quantity').value) || 0;
+            const commissionRate = parseFloat(document.getElementById('commission').value) || 0;
+            const taxRate = parseFloat(document.getElementById('taxRate').value) || 0;
+
+            if (buyPrice <= 0 || sellPrice <= 0 || quantity <= 0) {
+                alert('올바른 값을 입력해주세요.');
+                return;
+            }
+
+            const buyAmount = buyPrice * quantity;
+            const sellAmount = sellPrice * quantity;
+            
+            const buyCommission = Math.floor(buyAmount * commissionRate / 100);
+            const sellCommission = Math.floor(sellAmount * commissionRate / 100);
+            const sellTax = Math.floor(sellAmount * taxRate / 100);
+            
+            const totalBuyCost = buyAmount + buyCommission;
+            const totalSellRevenue = sellAmount - sellCommission - sellTax;
+            const profitLoss = totalSellRevenue - totalBuyCost;
+            const profitLossRate = (profitLoss / totalBuyCost) * 100;
+
+            const isProfit = profitLoss >= 0;
+            const resultClass = isProfit ? '' : 'loss';
+
+            const resultHTML = `
+                <div class="result-section ${resultClass}">
+                    <h4>${isProfit ? '💰 수익' : '📉 손실'} 계산 결과</h4>
+                    <div class="result-item">
+                        <span>매수 금액:</span>
+                        <span>${buyAmount.toLocaleString()}원</span>
+                    </div>
+                    <div class="result-item">
+                        <span>매수 수수료:</span>
+                        <span>${buyCommission.toLocaleString()}원</span>
+                    </div>
+                    <div class="result-item">
+                        <span>총 매수 비용:</span>
+                        <span>${totalBuyCost.toLocaleString()}원</span>
+                    </div>
+                    <div class="result-item">
+                        <span>매도 금액:</span>
+                        <span>${sellAmount.toLocaleString()}원</span>
+                    </div>
+                    <div class="result-item">
+                        <span>매도 수수료:</span>
+                        <span>${sellCommission.toLocaleString()}원</span>
+                    </div>
+                    <div class="result-item">
+                        <span>거래세:</span>
+                        <span>${sellTax.toLocaleString()}원</span>
+                    </div>
+                    <div class="result-item">
+                        <span>실제 수령액:</span>
+                        <span>${totalSellRevenue.toLocaleString()}원</span>
+                    </div>
+                    <div class="result-item">
+                        <span>${isProfit ? '순수익:' : '순손실:'}</span>
+                        <span>${Math.abs(profitLoss).toLocaleString()}원 (${profitLossRate.toFixed(2)}%)</span>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('basicResult').innerHTML = resultHTML;
+        }
+
+        function addPurchase() {
+            const purchaseList = document.getElementById('purchaseList');
+            const newPurchase = document.createElement('div');
+            newPurchase.className = 'purchase-item';
+            newPurchase.innerHTML = `
+                <div class="input-group">
+                    <label>매수 가격 (원)</label>
+                    <input type="number" class="purchase-price" placeholder="예: 50000">
+                </div>
+                <div class="input-group">
+                    <label>수량 (주)</label>
+                    <input type="number" class="purchase-quantity" placeholder="예: 100">
+                </div>
+                <button onclick="this.parentElement.remove()" style="background: #e74c3c; padding: 8px; border: none; color: white; border-radius: 4px; cursor: pointer;">삭제</button>
+            `;
+            purchaseList.appendChild(newPurchase);
+        }
+
+        function calculateAverage() {
+            const prices = document.querySelectorAll('.purchase-price');
+            const quantities = document.querySelectorAll('.purchase-quantity');
+            
+            let totalAmount = 0;
+            let totalQuantity = 0;
+            let purchases = [];
+
+            for (let i = 0; i < prices.length; i++) {
+                const price = parseFloat(prices[i].value) || 0;
+                const quantity = parseInt(quantities[i].value) || 0;
+                
+                if (price > 0 && quantity > 0) {
+                    const amount = price * quantity;
+                    totalAmount += amount;
+                    totalQuantity += quantity;
+                    purchases.push({price, quantity, amount});
+                }
+            }
+
+            if (totalQuantity === 0) {
+                alert('유효한 매수 정보를 입력해주세요.');
+                return;
+            }
+
+            const averagePrice = totalAmount / totalQuantity;
+            
+            let purchaseListHTML = '';
+            purchases.forEach((purchase, index) => {
+                purchaseListHTML += `
+                    <div class="result-item">
+                        <span>${index + 1}차 매수:</span>
+                        <span>${purchase.price.toLocaleString()}원 × ${purchase.quantity}주 = ${purchase.amount.toLocaleString()}원</span>
+                    </div>
+                `;
+            });
+
+            const resultHTML = `
+                <div class="result-section">
+                    <h4>📊 평균 단가 계산 결과</h4>
+                    ${purchaseListHTML}
+                    <div class="result-item">
+                        <span>총 투자금액:</span>
+                        <span>${totalAmount.toLocaleString()}원</span>
+                    </div>
+                    <div class="result-item">
+                        <span>총 수량:</span>
+                        <span>${totalQuantity.toLocaleString()}주</span>
+                    </div>
+                    <div class="result-item">
+                        <span>평균 단가:</span>
+                        <span>${averagePrice.toFixed(0)}원</span>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('averageResult').innerHTML = resultHTML;
+        }
+
+        function calculateBreakeven() {
+            const avgPrice = parseFloat(document.getElementById('avgPrice').value) || 0;
+            const totalQuantity = parseInt(document.getElementById('totalQuantity').value) || 0;
+            const commissionRate = parseFloat(document.getElementById('breakevenCommission').value) || 0;
+            const taxRate = parseFloat(document.getElementById('breakevenTax').value) || 0;
+
+            if (avgPrice <= 0 || totalQuantity <= 0) {
+                alert('올바른 값을 입력해주세요.');
+                return;
+            }
+
+            const totalCost = avgPrice * totalQuantity;
+            const breakEvenPrice = avgPrice * (1 + (commissionRate * 2 + taxRate) / 100);
+            
+            const resultHTML = `
+                <div class="result-section">
+                    <h4>⚖️ 손익분기점 계산 결과</h4>
+                    <div class="result-item">
+                        <span>평균 매수가:</span>
+                        <span>${avgPrice.toLocaleString()}원</span>
+                    </div>
+                    <div class="result-item">
+                        <span>보유 수량:</span>
+                        <span>${totalQuantity.toLocaleString()}주</span>
+                    </div>
+                    <div class="result-item">
+                        <span>총 투자금:</span>
+                        <span>${totalCost.toLocaleString()}원</span>
+                    </div>
+                    <div class="result-item">
+                        <span>손익분기 가격:</span>
+                        <span>${Math.ceil(breakEvenPrice).toLocaleString()}원</span>
+                    </div>
+                    <div class="result-item">
+                        <span>필요 상승률:</span>
+                        <span>${((breakEvenPrice - avgPrice) / avgPrice * 100).toFixed(2)}%</span>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('breakevenResult').innerHTML = resultHTML;
+        }
+
+        function calculateDividend() {
+            const dividendPerShare = parseFloat(document.getElementById('dividendPerShare').value) || 0;
+            const quantity = parseInt(document.getElementById('dividendQuantity').value) || 0;
+            const taxRate = parseFloat(document.getElementById('dividendTax').value) || 0;
+            const stockPrice = parseFloat(document.getElementById('stockPrice').value) || 0;
+
+            if (dividendPerShare <= 0 || quantity <= 0) {
+                alert('올바른 배당 정보를 입력해주세요.');
+                return;
+            }
+
+            const grossDividend = dividendPerShare * quantity;
+            const dividendTax = Math.floor(grossDividend * taxRate / 100);
+            const netDividend = grossDividend - dividendTax;
+            
+            let yieldInfo = '';
+            if (stockPrice > 0) {
+                const dividendYield = (dividendPerShare / stockPrice) * 100;
+                yieldInfo = `
+                    <div class="result-item">
+                        <span>배당 수익률:</span>
+                        <span>${dividendYield.toFixed(2)}%</span>
+                    </div>
+                `;
+            }
+
+            const resultHTML = `
+                <div class="result-section">
+                    <h4>💵 배당 계산 결과</h4>
+                    <div class="result-item">
+                        <span>주당 배당금:</span>
+                        <span>${dividendPerShare.toLocaleString()}원</span>
+                    </div>
+                    <div class="result-item">
+                        <span>보유 수량:</span>
+                        <span>${quantity.toLocaleString()}주</span>
+                    </div>
+                    <div class="result-item">
+                        <span>총 배당금:</span>
+                        <span>${grossDividend.toLocaleString()}원</span>
+                    </div>
+                    <div class="result-item">
+                        <span>배당세 (${taxRate}%):</span>
+                        <span>${dividendTax.toLocaleString()}원</span>
+                    </div>
+                    <div class="result-item">
+                        <span>실수령 배당금:</span>
+                        <span>${netDividend.toLocaleString()}원</span>
+                    </div>
+                    ${yieldInfo}
+                </div>
+            `;
+
+            document.getElementById('dividendResult').innerHTML = resultHTML;
+        }
+
+        // 초기 계산 예시
+        document.addEventListener('DOMContentLoaded', function() {
+            // 기본값 설정으로 예시 계산
+            setTimeout(() => {
+                const exampleHTML = `
+                    <div class="result-section" style="background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%);">
+                        <h4>📝 사용법</h4>
+                        <div class="result-item">
+                            <span>1. 매수/매도 가격과 수량을 입력하세요</span>
+                        </div>
+                        <div class="result-item">
+                            <span>2. 수수료율과 거래세율을 확인하세요</span>
+                        </div>
+                        <div class="result-item">
+                            <span>3. 계산하기 버튼을 클릭하세요</span>
+                        </div>
+                        <div class="result-item">
+                            <span>💡 탭을 클릭해 다른 계산기도 사용해보세요!</span>
+                        </div>
+                    </div>
+                `;
+                document.getElementById('basicResult').innerHTML = exampleHTML;
+            }, 500);
+        });
+    </script>
+</body>
+</html>
